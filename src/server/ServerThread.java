@@ -7,157 +7,134 @@ import java.net.Socket;
 
 import static server.Server.REQUIRED_USERNAME_LENGTH;
 
-public class ServerThread extends Thread {
-    private final Socket clientSocket;
-    private boolean isConnected;
-    private final PrintWriter out;
-    private final BufferedReader in;
-    private User user;
+public class ServerThread extends AbstractThread {
 
-    public ServerThread(Socket socket) {
-        this.clientSocket = socket;
-        try {
-            out = new PrintWriter(clientSocket.getOutputStream());
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+  public ServerThread(Socket socket) throws IOException {
+    super(socket);
+  }
+
+  /**
+   * Validate the username provided by the client. If invalid, notify the client of the validation
+   * error if valid, instantiate the user object with the client's username and InetAddress, and
+   * then add the ServerThread instance to the list of connected clients and their username to the
+   * list of client usernames.
+   */
+  public void validateUsername() {
+    try {
+      String errorMessage = "";
+      boolean validUsername = true;
+
+      Message clientMessage = getMessage();
+      String username = clientMessage.getBody();
+      if (username == null) {
+        validUsername = false;
+        errorMessage = "Username can't be null";
+      } else if (username.length() < REQUIRED_USERNAME_LENGTH) {
+        validUsername = false;
+        errorMessage = "Username must be more than 1 character";
+      } else if (!username.matches("[a-z0-9_-]+")) {
+        validUsername = false;
+        errorMessage = "Username can only contain lowercase characters, digits, hyphens, underscores";
+      } else if (Server.clientUsernames.contains(username)) {
+        validUsername = false;
+        errorMessage = "Username is already taken";
+      }
+
+      if (validUsername) {
+        this.registerClient(username);
+      } else {
+        this.sendMessage(
+            new Message(MessageType.INVALID_USERNAME, "", "", errorMessage));
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } catch (NullPointerException e) {
+      Logger.toConsole("Client Error", e.getMessage());
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Register client to the server. This entails; creating a user instance to hold certain
+   * information about the client, adding the client socket to the map of connected clients, adding
+   * the clients username to the list of client username, notifying other clients of a new user
+   * joining the chat and sending the list of connected.
+   *
+   * @param username THe username provided by the client
+   */
+  synchronized void registerClient(String username) {
+    this.setUser(new User(username, clientSocket.getInetAddress()));
+    Server.addClient(this, username);
+    this.sendMessage(
+        new Message(MessageType.CONNECTION, null, username, "Connected to server"));
+    this.isConnected = true;
+
+    String messageBody = String.format("User '%s' connected", username);
+    Server.broadcastMessage(new Message(MessageType.USERS, username, null, messageBody));
+
+    String log = String.format("%s:%d -> ", clientSocket.getInetAddress(), clientSocket.getPort())
+        + messageBody;
+    Logger.toConsole("REGISTRATION", log);
+  }
+
+  /**
+   * Handle new messages sent by the client
+   */
+  @Override
+  public void run() {
+    this.validateUsername();
+    while (this.isConnected) {
+      try {
+        Message message = getMessage();
+        //TODO: Handle different message types
+        switch (message.getType()) {
+          case CHAT:
+            Server.broadcastMessage(message);
+            break;
+          case CONNECTION:
+            Logger.toConsole("test", "HELLo");
+            break;
+          case DISCONNECTION:
+            break;
+          case INVALID_USERNAME:
+            break;
+          case USERS:
+            break;
+          case WHISPER:
+            break;
+          default:
+            throw new IllegalStateException(
+                String.format("User '%s' sent an invalid message type: %s", this.user.getUsername(),
+                    message.getType()));
         }
+      } catch (IOException e) {
+        this.disconnect();
+        String message = String.format("%s has disconnected", this.user.getUsername());
+        Server.broadcastMessage(
+            new Message(
+                MessageType.DISCONNECTION, null, null, this.user.getUsername()));
+        Logger.toConsole("DISCONNECTION", message);
+      } catch (NullPointerException e) {
+        Logger.toConsole("Client Error", e.getMessage());
+      } catch (IllegalStateException e) {
+        Logger.toConsole("CLIENT ERROR", e.getMessage());
+      } catch (ClassNotFoundException e) {
+        throw new RuntimeException(e);
+      }
     }
+  }
 
-    /**
-     * Validate the username provided by the client.
-     * If invalid, notify the client of the validation error
-     * if valid, instantiate the user object with the client's username and InetAddress, and then add the
-     * ServerThread instance to the list of connected clients and their username to the list of client usernames.
-     */
-    private synchronized void validateUsername() {
-        try {
-            InputStream clientInputStream = clientSocket.getInputStream();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(clientInputStream));
-
-            String username;
-            String messageBody;
-            while (true) {
-                username = bufferedReader.readLine();
-                if (username == null) {
-                    disconnect();
-                    String message = String.format("Socket {%s} Disconnected", clientSocket.getInetAddress());
-                    Logger.toConsole("DISCONNECTION", message);
-                    return;
-                }
-
-                if (username.length() < REQUIRED_USERNAME_LENGTH) {
-                    messageBody = "Username must be more than 1 character...";
-                } else if (!username.matches("[a-z0-9_-]+")) {
-                    messageBody = "Username can only contain lowercase characters, digits, hyphens, underscores...";
-                } else if (Server.clientUsernames.contains(username)) {
-                    messageBody = "Username already taken...";
-                } else {
-                    // Valid username
-                    this.user = new User(username, clientSocket.getInetAddress());
-                    Server.addClient(this, username);
-                    this.isConnected = true;
-                    break;
-                }
-                sendMessage(new Message(MessageType.INVALID_USERNAME, "", "", messageBody));
-            }
-
-            sendMessage(new Message(MessageType.CONNECTION, null, null, "Connected successfully"));
-            String message = String.format("User '%s' connected...", username);
-            Server.broadcastMessage(new Message(MessageType.USERS, username, null, message));
-            Logger.toConsole("[CONNECTION]", message);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+  @Override
+  public synchronized void disconnect() {
+    try {
+      super.disconnect();
+    } catch (IOException e) {
+      Logger.toConsole("SERVER ERROR",
+          String.format("Closing socket of user: '%s'", this.user.getUsername()));
+    } finally {
+      Server.removeClient(this.user.getUsername());
+      this.isConnected = false;
     }
-
-    /**
-     * Handle new messages sent by the client
-     */
-    @Override
-    public void run() {
-        validateUsername();
-        while (this.isConnected) {
-            try {
-                String receivedData = in.readLine();
-                if (receivedData == null) {
-                    throw new IOException(this.user.getUsername() + " disconnected");
-                }
-
-                if (!receivedData.equals("")) {
-                    Message message = (Message) Serializer.toObject(receivedData);
-                    //TODO: Handle different message types
-                    if (message != null) {
-                        switch (message.getType()) {
-                            case CHAT:
-                                Server.broadcastMessage(message);
-                                break;
-                            case CONNECTION:
-                                break;
-                            case DISCONNECTION:
-                                break;
-                            case INVALID_USERNAME:
-                                break;
-                            case USERS:
-                                break;
-                            case WHISPER:
-                                break;
-                            default:
-                                throw new IllegalStateException("Unexpected value: " + message.getType());
-                        }
-                    } else {
-                        Logger.toConsole("[ERROR]", "NULL MESSAGE");
-                    }
-                }
-            } catch (IOException e) {
-                disconnect();
-                String message = String.format("%s has disconnected", this.user.getUsername());
-                Server.broadcastMessage(new Message(MessageType.DISCONNECTION, null, null, message));
-                Logger.toConsole("[DISCONNECTION]", message);
-            }
-        }
-    }
-
-    /**
-     * Send messages in plaintext to the client
-     *
-     * @param message String: The message in plaintext
-     */
-    public synchronized void sendMessageAsPlaintext(String message) {
-        this.out.write(message);
-        this.out.flush();
-    }
-
-    /**
-     * Send serialized messages to the client
-     *
-     * @param message Message: The message object to be serialized and sent to the client
-     */
-    public synchronized void sendMessage(Message message) {
-        if (user.getUsername().contains("debug")) {
-            sendMessageAsPlaintext(message.getBody());
-        } else {
-            String serializedMessage = Serializer.toBase64(message);
-            this.out.write(serializedMessage);
-            this.out.flush();
-        }
-    }
-
-    /**
-     * Handle disconnecting the client and removing their thread instance from the list of connected clients and their
-     * username from the list of client usernames
-     */
-    public synchronized void disconnect() {
-        try {
-            this.clientSocket.close();
-            this.in.close();
-            this.out.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            Server.connectedClients.remove(this.user.getUsername());
-            Server.clientUsernames.remove(this.user.getUsername());
-            this.isConnected = false;
-        }
-    }
+  }
 }
