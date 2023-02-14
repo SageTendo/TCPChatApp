@@ -1,6 +1,5 @@
 package utils;
 
-import java.io.Serial;
 import java.io.Serializable;
 
 public class Message implements Serializable {
@@ -9,8 +8,9 @@ public class Message implements Serializable {
   private final String sender;
   private final String receiver;
   private final String body;
-  @Serial
   private static final long serialVersionUID = 69L;
+
+  public static final String DELIMITER = ",";
 
   /**
    * Constructor

@@ -1,10 +1,14 @@
 package client;
 
+import java.util.Arrays;
+import java.util.List;
 import utils.*;
 
 import java.io.IOException;
 
 public class ClientThread extends AbstractThread {
+
+  private List<String> connectedUsers;
 
   public ClientThread(String hostname, int port) throws IOException {
     super(hostname, port);
@@ -23,17 +27,25 @@ public class ClientThread extends AbstractThread {
         //TODO: Handle different message types
         if (message != null) {
           switch (message.getType()) {
-            case CHAT:
-              break;
             case CONNECTION:
+              setUser(new User(message.getReceiver(), clientSocket.getInetAddress()));
               break;
             case DISCONNECTION:
+              disconnect();
+              break;
+            case INVALID_MESSAGE:
               break;
             case INVALID_USERNAME:
               break;
-            case USERS:
+            case NONEXISTENT_USER:
               break;
+            case USERS:
+              String body = message.getBody();
+              connectedUsers = Arrays.asList(body.split(Message.DELIMITER));
+              break;
+            case CHAT:
             case WHISPER:
+              // TODO: handle chat and whisper messages
               break;
             default:
               throw new IllegalStateException("Unexpected value: " + message.getType());
@@ -57,5 +69,9 @@ public class ClientThread extends AbstractThread {
       //TODO: Handle exception
       throw new RuntimeException(e);
     }
+  }
+
+  public List<String> getConnectedUsers() {
+    return connectedUsers;
   }
 }

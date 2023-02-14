@@ -47,7 +47,14 @@ public class ServerThread extends AbstractThread {
             new Message(MessageType.INVALID_USERNAME, "", "", errorMessage));
       }
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      try {
+        super.disconnect();
+        String log = String.format("Socket -> %s:%s disconnected", clientSocket.getInetAddress(),
+            clientSocket.getPort());
+        Logger.toConsole("DISCONNECTION", log);
+      } catch (IOException ex) {
+        throw new RuntimeException(ex);
+      }
     } catch (NullPointerException e) {
       Logger.toConsole("Client Error", e.getMessage());
     } catch (ClassNotFoundException e) {
@@ -72,7 +79,6 @@ public class ServerThread extends AbstractThread {
 
     String messageBody = String.format("User '%s' connected", username);
     Server.broadcastMessage(new Message(MessageType.USERS, username, null, messageBody));
-
     String log = String.format("%s:%d -> ", clientSocket.getInetAddress(), clientSocket.getPort())
         + messageBody;
     Logger.toConsole("REGISTRATION", log);
@@ -83,25 +89,41 @@ public class ServerThread extends AbstractThread {
    */
   @Override
   public void run() {
-    this.validateUsername();
-    while (this.isConnected) {
+    validateUsername();
+    while (isConnected) {
       try {
         Message message = getMessage();
         //TODO: Handle different message types
         switch (message.getType()) {
           case CHAT:
-            Server.broadcastMessage(message);
-            break;
-          case CONNECTION:
-            Logger.toConsole("test", "HELLo");
+            if (message.getBody().length() != 0) {
+              Server.broadcastMessage(message);
+            }
             break;
           case DISCONNECTION:
-            break;
-          case INVALID_USERNAME:
-            break;
+            throw new IOException();
           case USERS:
+            String listAsString = String.join(",", Server.clientUsernames);
+            sendMessage(
+                new Message(MessageType.USERS, null, null, listAsString));
             break;
           case WHISPER:
+            String errorMessage = null;
+            boolean messageValid = true;
+            if (message.getReceiver() == null) {
+              errorMessage = "No username was provided";
+              messageValid = false;
+            } else if (!Server.hasClient(message.getReceiver())) {
+              errorMessage = String.format("User '%s' does not exist", message.getReceiver());
+              messageValid = false;
+            }
+            if (messageValid) {
+              this.sendMessage(message); //Send the message back to the sender
+              Server.sendWhisperMessage(message);
+            } else {
+              sendMessage(
+                  new Message(MessageType.NONEXISTENT_USER, null, null, errorMessage));
+            }
             break;
           default:
             throw new IllegalStateException(

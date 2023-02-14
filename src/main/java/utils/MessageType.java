@@ -7,7 +7,9 @@ public enum MessageType {
   // TODO: Add more types if necessary
   CONNECTION,
   DISCONNECTION,
+  INVALID_MESSAGE,
   INVALID_USERNAME,
+  NONEXISTENT_USER,
   USERS,
   CHAT,
   WHISPER

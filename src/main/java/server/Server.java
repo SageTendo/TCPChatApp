@@ -60,6 +60,18 @@ public class Server {
     }).start();
   }
 
+  /**
+   * Send messages to a specific client (a private message)
+   *
+   * @param message The message to send to the client
+   */
+  static synchronized void sendWhisperMessage(Message message) {
+    new Thread(() -> {
+      ServerThread receiver = connectedClients.get(message.getReceiver());
+      receiver.sendMessage(message);
+    }).start();
+  }
+
 
   /**
    * Add the new client handler to the list of connected clients and their username to the list of
@@ -82,6 +94,10 @@ public class Server {
   static synchronized void removeClient(String username) {
     connectedClients.remove(username);
     clientUsernames.remove(username);
+  }
+
+  static synchronized boolean hasClient(String username) {
+    return connectedClients.containsKey(username);
   }
 
   /**

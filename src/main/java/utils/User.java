@@ -7,6 +7,7 @@ public class User implements Serializable {
 
   private final String username;
   private final InetAddress ip;
+  private static final long serialVersionUID = 420L;
 
   public User(String username, InetAddress ip) {
     this.username = username;
@@ -38,5 +39,11 @@ public class User implements Serializable {
   @Override
   public int hashCode() {
     return this.username.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return String.format("\nUsername: %s\n"
+        + "IP: %s\n\n", username, ip);
   }
 }
