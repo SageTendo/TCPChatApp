@@ -7,7 +7,7 @@
 >
 **USEFUL RESOURCES:**
 
-[Notion Document](https://www.notion.so/Project-1-Multi-Threaded-TCP-Chat-Application-2c1c3f0bbbd64af7804654c6951a8d9a#7d8542f6ddaa442fbcc574bf5151ba7f)
+[Notion Document](https://www.notion.so/invite/d1cb5828b9464fec174f77872cd84ad634178656)
 
 [Project Specification](https://cs354.cs.sun.ac.za/ASSIGNMENTS/Assignment1.pdf)
 
