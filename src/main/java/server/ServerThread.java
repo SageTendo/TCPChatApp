@@ -103,7 +103,7 @@ public class ServerThread extends AbstractThread {
           case DISCONNECTION:
             throw new IOException();
           case USERS:
-            String listAsString = String.join(",", Server.clientUsernames);
+            String listAsString = String.join(Message.DELIMITER, Server.clientUsernames);
             sendMessage(
                 new Message(MessageType.USERS, null, null, listAsString));
             break;
