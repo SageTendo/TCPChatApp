@@ -13,9 +13,11 @@ javac -sourcepath . server/Server.java
 java server.Server
 ```
 
-### Compiling and running the client
+### Compiling and running the test client
 ```shell
-
+cd src/main/java
+javac -sourcepath . randomtest/TestClient.java 
+java randomtest.TestClient
 ```
  
 **USEFUL RESOURCES:**

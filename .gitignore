@@ -1,3 +1,5 @@
 /.idea
 TCPChatApp.iml
 /out
+/target
+*.class
