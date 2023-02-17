@@ -19,7 +19,7 @@ public class ServerThread extends AbstractThread {
    * then add the ServerThread instance to the list of connected clients and their username to the
    * list of client usernames.
    */
-  public void validateUsername() {
+  private void validateUsername() {
     try {
       String errorMessage = "";
       boolean validUsername = true;
@@ -35,7 +35,7 @@ public class ServerThread extends AbstractThread {
       } else if (!username.matches("[a-z0-9_-]+")) {
         validUsername = false;
         errorMessage = "Username can only contain lowercase characters, digits, hyphens, underscores";
-      } else if (Server.clientUsernames.contains(username)) {
+      } else if (Server.hasClient(username)) {
         validUsername = false;
         errorMessage = "Username is already taken";
       }
@@ -49,14 +49,14 @@ public class ServerThread extends AbstractThread {
     } catch (IOException e) {
       try {
         super.disconnect();
-        String log = String.format("Socket -> %s:%s disconnected", clientSocket.getInetAddress(),
-            clientSocket.getPort());
+        String log = "Socket -> " + clientSocket.getInetAddress() + ":" + clientSocket.getPort()
+            + " disconnected";
         Logger.toConsole("DISCONNECTION", log);
       } catch (IOException ex) {
         throw new RuntimeException(ex);
       }
     } catch (NullPointerException e) {
-      Logger.toConsole("Client Error", e.getMessage());
+      Logger.toConsole("CLIENT ERROR", e.getMessage());
     } catch (ClassNotFoundException e) {
       throw new RuntimeException(e);
     }
@@ -77,6 +77,7 @@ public class ServerThread extends AbstractThread {
         new Message(MessageType.CONNECTION, null, username, "Connected to server"));
     this.isConnected = true;
 
+    // Notify all connected client of a new client connection
     String messageBody = String.format("User '%s' connected", username);
     Server.broadcastMessage(new Message(MessageType.USERS, username, null, messageBody));
     String log = String.format("%s:%d -> ", clientSocket.getInetAddress(), clientSocket.getPort())
@@ -90,7 +91,7 @@ public class ServerThread extends AbstractThread {
   @Override
   public void run() {
     validateUsername();
-    while (isConnected) {
+    while (this.isConnected) {
       try {
         Message message = getMessage();
         //TODO: Handle different message types
@@ -103,39 +104,31 @@ public class ServerThread extends AbstractThread {
           case DISCONNECTION:
             throw new IOException();
           case USERS:
-            String listAsString = String.join(Message.DELIMITER, Server.clientUsernames);
-            sendMessage(
-                new Message(MessageType.USERS, null, null, listAsString));
+            String listAsString = String.join(Message.DELIMITER, Server.getClientUsernames());
+            sendMessage(new Message(MessageType.USERS, null, null, listAsString));
             break;
           case WHISPER:
-            String errorMessage = null;
-            boolean messageValid = true;
             if (message.getReceiver() == null) {
-              errorMessage = "No username was provided";
-              messageValid = false;
+              String error = "No username was provided";
+              sendMessage(new Message(MessageType.NONEXISTENT_USER, null, null, error));
             } else if (!Server.hasClient(message.getReceiver())) {
-              errorMessage = String.format("User '%s' does not exist", message.getReceiver());
-              messageValid = false;
-            }
-            if (messageValid) {
-              this.sendMessage(message); //Send the message back to the sender
-              Server.sendWhisperMessage(message);
+              String error = "User " + message.getReceiver() + " does not exist";
+              sendMessage(new Message(MessageType.NONEXISTENT_USER, null, null, error));
             } else {
-              sendMessage(
-                  new Message(MessageType.NONEXISTENT_USER, null, null, errorMessage));
+              sendMessage(message); //Send the message back to the sender
+              Server.sendWhisperMessage(message);
             }
             break;
           default:
             throw new IllegalStateException(
-                String.format("User '%s' sent an invalid message type: %s", this.user.getUsername(),
-                    message.getType()));
+                "User " + user.getUsername() + " sent an invalid message "
+                    + "type: " + message.getType());
         }
       } catch (IOException e) {
-        this.disconnect();
-        String message = String.format("%s has disconnected", this.user.getUsername());
+        disconnect();
+        String message = String.format("%s has disconnected", user.getUsername());
         Server.broadcastMessage(
-            new Message(
-                MessageType.DISCONNECTION, null, null, this.user.getUsername()));
+            new Message(MessageType.DISCONNECTION, null, null, user.getUsername()));
         Logger.toConsole("DISCONNECTION", message);
       } catch (NullPointerException e) {
         Logger.toConsole("Client Error", e.getMessage());
@@ -148,15 +141,14 @@ public class ServerThread extends AbstractThread {
   }
 
   @Override
-  public synchronized void disconnect() {
+  public void disconnect() {
     try {
       super.disconnect();
     } catch (IOException e) {
       Logger.toConsole("SERVER ERROR",
-          String.format("Closing socket of user: '%s'", this.user.getUsername()));
+          "Closing socket of user: '" + user.getUsername() + "'");
     } finally {
-      Server.removeClient(this.user.getUsername());
-      this.isConnected = false;
+      Server.removeClient(user.getUsername());
     }
   }
 }

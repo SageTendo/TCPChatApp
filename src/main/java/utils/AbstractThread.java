@@ -1,6 +1,8 @@
 package utils;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 public abstract class AbstractThread extends Thread {
@@ -49,8 +51,8 @@ public abstract class AbstractThread extends Thread {
    * @throws IOException: If an I/O error occurs when closing the socket.
    */
   public void disconnect() throws IOException {
-    this.clientSocket.close();
     this.isConnected = false;
+    this.clientSocket.close();
   }
 
   /**

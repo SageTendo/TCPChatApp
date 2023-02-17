@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import utils.Logger;
 import utils.Message;
 
@@ -12,9 +13,8 @@ public class Server {
 
   static final int REQUIRED_USERNAME_LENGTH = 2;
   private final ServerSocket serverSocket;
-  static final HashMap<String, ServerThread> connectedClients = new HashMap<>();
-  static final ArrayList<String> clientUsernames = new ArrayList<>();
-
+  static final ConcurrentHashMap<String, ServerThread> connectedClients = new ConcurrentHashMap<>();
+  boolean serverStarted = true;
 
   public Server(String ip, int port) throws IOException {
     this.serverSocket = new ServerSocket(port);
@@ -30,7 +30,7 @@ public class Server {
    */
   private void newClientConnectionListener() {
     new Thread(() -> {
-      while (true) {
+      while (serverStarted) {
         try {
           Socket clientSocket = this.serverSocket.accept();
           String log = String.format("New socket connection -> %s:%d",
@@ -52,12 +52,14 @@ public class Server {
    *
    * @param message The message to be broadcast to all connected clients
    */
-  static synchronized void broadcastMessage(Message message) {
-    new Thread(() -> {
+  static void broadcastMessage(Message message) {
+    synchronized (connectedClients) {
       for (ServerThread client : connectedClients.values()) {
-        client.sendMessage(message);
+        if (client.isConnected) {
+          client.sendMessage(message);
+        }
       }
-    }).start();
+    }
   }
 
   /**
@@ -66,10 +68,8 @@ public class Server {
    * @param message The message to send to the client
    */
   static synchronized void sendWhisperMessage(Message message) {
-    new Thread(() -> {
-      ServerThread receiver = connectedClients.get(message.getReceiver());
-      receiver.sendMessage(message);
-    }).start();
+    ServerThread receiver = connectedClients.get(message.getReceiver());
+    receiver.sendMessage(message);
   }
 
 
@@ -80,9 +80,10 @@ public class Server {
    * @param client   The thread that handles the connected client.
    * @param username The username that the client provided.
    */
-  static synchronized void addClient(ServerThread client, String username) {
-    clientUsernames.add(username);
-    connectedClients.put(username, client);
+  static void addClient(ServerThread client, String username) {
+    synchronized (connectedClients) {
+      connectedClients.put(username, client);
+    }
   }
 
   /**
@@ -91,22 +92,38 @@ public class Server {
    *
    * @param username: The client's username
    */
-  static synchronized void removeClient(String username) {
-    connectedClients.remove(username);
-    clientUsernames.remove(username);
+  static void removeClient(String username) {
+    synchronized (connectedClients) {
+      connectedClients.remove(username);
+    }
   }
 
-  static synchronized boolean hasClient(String username) {
+  static boolean hasClient(String username) {
     return connectedClients.containsKey(username);
   }
 
   /**
-   * Close the running server socket
+   * Get a list of connected clients' usernames.
+   * @return The list of usernames
+   */
+  public static List<String> getClientUsernames() {
+    List<String> usernames;
+    synchronized (connectedClients) {
+      usernames = new ArrayList<>(connectedClients.keySet());
+    }
+    return usernames;
+  }
+
+  /**
+   * Close the serverStarted server socket
    */
   private void close() {
     try {
-      for (ServerThread client : connectedClients.values()) {
-        client.disconnect();
+      serverStarted = false;
+      synchronized (connectedClients) {
+        for (ServerThread client : connectedClients.values()) {
+          client.disconnect();
+        }
       }
       serverSocket.close();
     } catch (IOException e) {
