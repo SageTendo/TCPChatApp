@@ -25,6 +25,7 @@ public class ClientTest {
       throw new RuntimeException(e);
     }
   }
+
   @Test
   public void testConnection() {
     ClientThread t1 = setup();

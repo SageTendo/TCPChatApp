@@ -9,6 +9,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import utils.Logger;
 import utils.Message;
 
+/**
+ * Server class that listens for client socket connections and handles communication between
+ * clients.
+ */
 public class Server {
 
   static final int REQUIRED_USERNAME_LENGTH = 2;
@@ -16,6 +20,13 @@ public class Server {
   static final ConcurrentHashMap<String, ServerThread> connectedClients = new ConcurrentHashMap<>();
   boolean serverStarted = true;
 
+  /**
+   * Constructor
+   *
+   * @param ip   THe IP Address to bind the server instance to.
+   * @param port The port number that the server will run on.
+   * @throws IOException - If an I/O error occurs when opening the socket.
+   */
   public Server(String ip, int port) throws IOException {
     this.serverSocket = new ServerSocket(port);
     newClientConnectionListener();
@@ -98,12 +109,17 @@ public class Server {
     }
   }
 
+  /**
+   * @param username The client's username
+   * @return True if the client is connected to the server, otherwise False
+   */
   static boolean hasClient(String username) {
     return connectedClients.containsKey(username);
   }
 
   /**
    * Get a list of connected clients' usernames.
+   *
    * @return The list of usernames
    */
   public static List<String> getClientUsernames() {
@@ -115,7 +131,7 @@ public class Server {
   }
 
   /**
-   * Close the serverStarted server socket
+   * Closes the server socket and all connected client sockets.
    */
   private void close() {
     try {

@@ -5,6 +5,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+/**
+ * A subclass of the {@link Thread} class.
+ * Provides common functionalities that can be used by
+ * multiple threads.
+ */
 public abstract class AbstractThread extends Thread {
 
   public final Socket clientSocket;

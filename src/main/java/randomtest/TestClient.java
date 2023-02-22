@@ -9,6 +9,10 @@ import java.io.IOException;
 import java.net.Socket;
 import utils.User;
 
+/**
+ * This is a test implementation of a client thread that communicates with the server. ONLY FOR
+ * TESTING PURPOSES AND WILL NOT BE PART OF THE FINAL PROJECT!
+ */
 public class TestClient extends AbstractThread {
 
   public TestClient(Socket clientSocket) throws IOException {
@@ -30,6 +34,7 @@ public class TestClient extends AbstractThread {
               break;
             case INVALID_USERNAME:
               Logger.toConsole("INVALID USERNAME", message.getBody());
+              System.exit(0);
               break;
             case USERS:
               Logger.toConsole("USERS", message.getBody());
@@ -56,8 +61,8 @@ public class TestClient extends AbstractThread {
 
   public static void main(String[] args) {
     try {
-      TestClient t = new TestClient(new Socket("192.168.76.187", 5000));
-      t.scanner();
+      TestClient t = new TestClient(new Socket("localhost", 5000));
+      t.scanner(); //message listener
       t.sendMessage(new Message(MessageType.CONNECTION, null, null, args[0]));
       t.sendMessage(new Message(MessageType.CHAT, args[0], null, "hello world"));
       t.sendMessage(new Message(MessageType.WHISPER, args[0], "user2", "hello user1"));

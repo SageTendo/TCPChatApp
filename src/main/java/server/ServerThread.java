@@ -7,8 +7,15 @@ import java.net.Socket;
 
 import static server.Server.REQUIRED_USERNAME_LENGTH;
 
+/**
+ * A subclass of the AbstractThread. This handles each client connection to the chat server, by
+ * creating a separate thread for each client.
+ */
 public class ServerThread extends AbstractThread {
 
+  /**
+   * @see utils.AbstractThread#AbstractThread(Socket)
+   */
   public ServerThread(Socket socket) throws IOException {
     super(socket);
   }
@@ -140,6 +147,9 @@ public class ServerThread extends AbstractThread {
     }
   }
 
+  /**
+   * Disconnects the client socket and removes them from the connected clients map.
+   */
   @Override
   public void disconnect() {
     try {

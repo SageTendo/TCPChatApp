@@ -2,6 +2,9 @@ package utils;
 
 import java.io.Serializable;
 
+/**
+ * Represents a message in a client-server chat application.
+ */
 public class Message implements Serializable {
 
   private final MessageType type;
@@ -18,7 +21,7 @@ public class Message implements Serializable {
    * @param type:     The type of message to be sent
    * @param sender:   The client sending the message
    * @param receiver: The client receiving the message (for Whisper messages)
-   * @param body:     The message body
+   * @param body:     The content of the message, such as "Hello User1"
    */
   public Message(MessageType type, String sender, String receiver, String body) {
     this.type = type;
@@ -55,6 +58,14 @@ public class Message implements Serializable {
     return body;
   }
 
+  /**
+   * EXAMPLE MESSAGE=>
+   * 	 TYPE: TEXT
+   * 	 FROM: Alice
+   * 	 TO: Bob
+   * 	 body: Hi Bob, how are you doing?
+   * @return A string representation of the message object.
+   */
   @Override
   public String toString() {
     return "MESSAGE:\n" +
