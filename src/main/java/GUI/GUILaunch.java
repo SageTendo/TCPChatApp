@@ -1,11 +1,20 @@
+package GUI;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
+
+import client.ClientThread;
+import server.ServerThread;
+import utils.MessageType;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.*;
+import java.io.IOException;
+import java.net.Socket;
 
 /**
  * The GUILaunch program implements an application that displays a GUI for the Chat-App 
@@ -27,7 +36,7 @@ public class GUILaunch {
     private static boolean isNumber = false;
 
 
-    GUILaunch(){
+    public GUILaunch(){
         GUIcomponents();
         GUILaunchInit();
     }
@@ -84,7 +93,17 @@ public class GUILaunch {
                             JOptionPane.showMessageDialog(connectButton,"Please enter a valid port number","Attention!",JOptionPane.WARNING_MESSAGE);
                         } else{
                             System.out.println("Connect to Server");
-                            ChatGUI gui = new ChatGUI(enterUsername.getText());
+                            try { 
+                        
+                                int iport = Integer.parseInt(port.getText());
+                             if (ClientThread.launchChatGui){
+                                ChatGUI gui = new ChatGUI(enterUsername.getText(),iport);
+                             }
+                    
+                            } catch (NumberFormatException | IOException e1) {
+                                // TODO Auto-generated catch block
+                                e1.printStackTrace();
+                            }
                             launchFrame.dispose();
                         }
                     }
@@ -125,7 +144,7 @@ public class GUILaunch {
 
     public static void main(String[] args) {
 
-        GUILaunch GUIlaunch = new GUILaunch();
+        // GUILaunch GUIlaunch = new GUILaunch();
         
     }
 }
