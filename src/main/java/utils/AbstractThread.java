@@ -16,7 +16,7 @@ public abstract class AbstractThread extends Thread {
   public User user;
   public ObjectOutputStream out;
   public ObjectInputStream in;
-  public boolean isConnected = false;
+  private boolean isConnected = false;
 
   /**
    * @param clientSocket The socket connection between the server and client
@@ -99,5 +99,13 @@ public abstract class AbstractThread extends Thread {
       );
     }
     return message;
+  }
+
+  public boolean isConnected() {
+    return isConnected;
+  }
+
+  public void setConnected(boolean connected) {
+    isConnected = connected;
   }
 }

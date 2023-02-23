@@ -7,6 +7,19 @@ import java.io.Serializable;
  */
 public class Message implements Serializable {
 
+  public enum MessageType {
+    // TODO: Add more types if necessary
+    CHAT,
+    CONNECTION,
+    DISCONNECTION,
+    INVALID_MESSAGE,
+    INVALID_USERNAME,
+    NONEXISTENT_USER,
+    USERS,
+    WHISPER
+
+  }
+
   private final MessageType type;
   private final String sender;
   private final String receiver;
@@ -59,11 +72,8 @@ public class Message implements Serializable {
   }
 
   /**
-   * EXAMPLE MESSAGE=>
-   * 	 TYPE: TEXT
-   * 	 FROM: Alice
-   * 	 TO: Bob
-   * 	 body: Hi Bob, how are you doing?
+   * EXAMPLE MESSAGE=> TYPE: TEXT FROM: Alice TO: Bob body: Hi Bob, how are you doing?
+   *
    * @return A string representation of the message object.
    */
   @Override

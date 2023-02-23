@@ -1,12 +1,16 @@
 package client;
 
+import GUI.ChatGUI;
 import java.util.Arrays;
 import java.util.List;
+import javax.swing.JOptionPane;
 import utils.*;
 
 import java.io.IOException;
 
 public class ClientThread extends AbstractThread {
+
+  private ChatGUI chatGUI;
 
   private List<String> connectedUsers;
 
@@ -28,7 +32,10 @@ public class ClientThread extends AbstractThread {
         if (message != null) {
           switch (message.getType()) {
             case CONNECTION:
+              JOptionPane.showMessageDialog(null, "Connected");
               setUser(new User(message.getReceiver(), clientSocket.getInetAddress()));
+              ChatGUI.usernameField.setText(user.getUsername());
+              chatGUI = new ChatGUI();
               break;
             case DISCONNECTION:
               disconnect();
@@ -36,6 +43,7 @@ public class ClientThread extends AbstractThread {
             case INVALID_MESSAGE:
               break;
             case INVALID_USERNAME:
+              JOptionPane.showMessageDialog(null, message.getBody());
               break;
             case NONEXISTENT_USER:
               break;
@@ -56,6 +64,7 @@ public class ClientThread extends AbstractThread {
       } catch (IOException e) {
         disconnect();
       } catch (ClassNotFoundException e) {
+        // TODO: Handle exception
         throw new RuntimeException(e);
       }
     }
