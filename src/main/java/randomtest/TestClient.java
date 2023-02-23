@@ -1,12 +1,14 @@
 package randomtest;
 
-import utils.AbstractThread;
-import utils.Logger;
-import utils.Message;
-import utils.MessageType;
+import static utils.Message.MessageType.CHAT;
+import static utils.Message.MessageType.CONNECTION;
+import static utils.Message.MessageType.WHISPER;
 
 import java.io.IOException;
 import java.net.Socket;
+import utils.AbstractThread;
+import utils.Logger;
+import utils.Message;
 import utils.User;
 
 /**
@@ -17,12 +19,12 @@ public class TestClient extends AbstractThread {
 
   public TestClient(Socket clientSocket) throws IOException {
     super(clientSocket);
-    isConnected = true;
+    setConnected(true);
   }
 
   void scanner() {
     new Thread(() -> {
-      while (isConnected) {
+      while (true) {
         try {
           Message message = getMessage();
           switch (message.getType()) {
@@ -49,10 +51,11 @@ public class TestClient extends AbstractThread {
           try {
             super.disconnect();
           } catch (IOException ex) {
+            // TODO: Handle exception
             throw new RuntimeException(ex);
           }
-//          throw new RuntimeException(e);
         } catch (ClassNotFoundException e) {
+          // TODO: Handle exception
           throw new RuntimeException(e);
         }
       }
@@ -60,13 +63,33 @@ public class TestClient extends AbstractThread {
   }
 
   public static void main(String[] args) {
+    String IPAddress;
+    int port;
+
     try {
-      TestClient t = new TestClient(new Socket("localhost", 5000));
+      if (args.length != 3) {
+        System.err.println("usage: java randomtest.TestClient <IP ADDRESS> <PORT NUMBER> "
+            + "<USERNAME>");
+        System.exit(1);
+      }
+
+      /* Read in CLI arguments */
+      IPAddress = args[0];
+      try {
+        port = Integer.parseInt(args[1]);
+      } catch (NumberFormatException ignored) {
+        System.err.println("Invalid port number provided...");
+        System.err.println("Defaulting to port 5000");
+        port = 5000;
+      }
+
+      String username = args[2];
+      TestClient t = new TestClient(new Socket(IPAddress, port));
       t.scanner(); //message listener
-      t.sendMessage(new Message(MessageType.CONNECTION, null, null, args[0]));
-      t.sendMessage(new Message(MessageType.CHAT, args[0], null, "hello world"));
-      t.sendMessage(new Message(MessageType.WHISPER, args[0], "user2", "hello user1"));
-      t.sendMessage(new Message(MessageType.DISCONNECTION, null, null, null));
+      t.sendMessage(new Message(CONNECTION, null, null, username));
+      t.sendMessage(new Message(CHAT, username, null, "hello world"));
+      t.sendMessage(new Message(WHISPER, username, "user2", "hello user1"));
+//      t.sendMessage(new Message(DISCONNECTION, null, null, null));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

@@ -24,7 +24,7 @@ import javax.swing.border.Border;
 import client.ClientThread;
 import server.ServerThread;
 import utils.Message;
-import utils.MessageType;
+import utils.Message.MessageType;
 
 /**
  * The GUI program implements an application that displays a simple GUI for the
@@ -118,7 +118,7 @@ public class ChatGUI {
         });
         frame.add(exitButton);
 
-        // Design of the area that will display messages that are sent and received.
+    //Exit Button Design
 
         messageArea = new JTextArea(16, 19);
         messageArea.setFont(new Font("SansSerif", Font.PLAIN, 15));
@@ -129,9 +129,15 @@ public class ChatGUI {
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)));
         messageArea.setLineWrap(true);
 
-        // Adding a scroll incase the messages get to the end of the area
+    // Design of the area that will display messages that are sent and received.
 
-        JScrollPane scroll = new JScrollPane(messageArea);
+    messageArea = new JTextArea(16, 19);
+    messageArea.setFont(new Font("SansSerif", Font.PLAIN, 15));
+    messageArea.setForeground(Color.black);
+    messageArea.setEditable(false);
+    messageArea.setBorder(BorderFactory.createCompoundBorder(border,
+        BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+    messageArea.setLineWrap(true);
 
         // Using a JPanel to sort of group the textArea and the scroller together
 
@@ -147,10 +153,9 @@ public class ChatGUI {
         messageField.setForeground(Color.black);
         frame.add(messageField);
 
-        usernameLabel = new JLabel();
-        usernameLabel.setText("Username:");
-        usernameLabel.setBounds(390, 40, 110, 20);
-        frame.add(usernameLabel);
+    container.setBounds(50, 45, 320, 320);
+    container.add(scroll);
+    frame.add(container);
 
         // this will display the user's current nickname
 
@@ -165,10 +170,7 @@ public class ChatGUI {
 
         // List for current online users
 
-        userListLabel = new JLabel();
-        userListLabel.setText("Online users:");
-        userListLabel.setBounds(390, 120, 110, 20);
-        frame.add(userListLabel);
+    //this will display the user's current nickname
 
         String[] users = { "User1", "User2", "User3" }; // just for illustration
 
@@ -222,6 +224,10 @@ public class ChatGUI {
         sendButton.setIcon(send);
         sendButton.setFocusable(false);
 
+    JComboBox<String> userListBox = new JComboBox<>(users);
+    userListBox.setBounds(390, 150, 110, 20);
+    userListBox.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         /**
          * 
          * So here once the sendButton is pressed, whatever is in the messageField will
@@ -242,14 +248,14 @@ public class ChatGUI {
                         String body = messageField.getText();
                         System.out.println(body);
                         if (body.contains("@")){
-                            msgType = MessageType.WHISPER;
+                            // msgType = ut.WHISPER;
                             receiver = body.substring(body.indexOf("@")+1, body.indexOf(" "));
                         }
                         // messageArea.append(username+": "+body+"\n"); //appended on the TextArea
                         System.out.println("---" + clientThread.getConnectedUsers() + "---");
-                        Message msg = new Message(msgType, username, receiver, body);
-                        msgType = MessageType.CHAT;//reset to default
-                        clientThread.sendMessage(msg);// sending message to server
+                        // Message msg = new Message(msgType, username, receiver, body);
+                        // msgType = MessageType.CHAT;//reset to default
+                        // clientThread.sendMessage(msg);// sending message to server
 
                     }
                 }
@@ -282,21 +288,4 @@ public class ChatGUI {
         helpArea.setEditable(false);
         frame.add(helpArea);
     }
-
-    /**
-     * This is the main method which creates a new GUI object
-     * 
-     * @param args Unused.
-     * @return nothing
-     * @throws IOException
-     * @throws UnknownHostException
-     * @throws ClassNotFoundException
-     */
-
-    public static void main(String[] args) throws UnknownHostException, IOException, ClassNotFoundException {
-        ;
-        // ChatGUI GUI= new ChatGUI();
-        new GUILaunch();
-    }
-
 }

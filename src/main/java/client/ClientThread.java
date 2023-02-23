@@ -9,6 +9,7 @@ import javax.swing.JTextArea;
 import javax.xml.transform.Templates;
 
 import utils.*;
+import utils.Message.MessageType;
 
 import java.io.*;
 import java.net.Socket;

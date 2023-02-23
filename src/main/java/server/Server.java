@@ -18,7 +18,7 @@ public class Server {
   static final int REQUIRED_USERNAME_LENGTH = 2;
   private final ServerSocket serverSocket;
   static final ConcurrentHashMap<String, ServerThread> connectedClients = new ConcurrentHashMap<>();
-  boolean serverStarted = true;
+  private boolean serverStarted;
 
   /**
    * Constructor
@@ -29,6 +29,7 @@ public class Server {
    */
   public Server(String ip, int port) throws IOException {
     this.serverSocket = new ServerSocket(port);
+    this.serverStarted = true;
     newClientConnectionListener();
 
     String hostname = ip == null ? "localhost" : ip;
@@ -66,7 +67,7 @@ public class Server {
   static void broadcastMessage(Message message) {
     synchronized (connectedClients) {
       for (ServerThread client : connectedClients.values()) {
-        if (client.isConnected) {
+        if (client.isConnected()) {
           client.sendMessage(message);
         }
       }
@@ -143,13 +144,33 @@ public class Server {
       }
       serverSocket.close();
     } catch (IOException e) {
+      // TODO: handle exception
       throw new RuntimeException(e);
     }
   }
 
   public static void main(String[] args) {
+    String IPAddress;
+    int port;
+
     try {
-      new Server(null, 5000);
+      if (args.length != 2) {
+        System.err.println("usage: java server.Server <IP ADDRESS> <PORT NUMBER>");
+        System.exit(1);
+      }
+
+      /* Read in CLI arguments */
+      IPAddress = args[0];
+      try {
+        port = Integer.parseInt(args[1]);
+      } catch (NumberFormatException ignored) {
+        System.err.println("Invalid port number provided...");
+        System.err.println("Defaulting to port 5000");
+        port = 5000;
+      }
+
+      /* Create a server instance */
+      new Server(IPAddress, port);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

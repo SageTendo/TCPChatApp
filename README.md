@@ -17,7 +17,7 @@ java server.Server
 ```shell
 cd src/main/java
 javac -sourcepath . randomtest/TestClient.java 
-java randomtest.TestClient
+java randomtest.TestClient <username>
 ```
  
 **USEFUL RESOURCES:**

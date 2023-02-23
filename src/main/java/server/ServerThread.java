@@ -6,6 +6,12 @@ import java.io.*;
 import java.net.Socket;
 
 import static server.Server.REQUIRED_USERNAME_LENGTH;
+import static utils.Message.MessageType.CONNECTION;
+import static utils.Message.MessageType.DISCONNECTION;
+import static utils.Message.MessageType.INVALID_MESSAGE;
+import static utils.Message.MessageType.INVALID_USERNAME;
+import static utils.Message.MessageType.NONEXISTENT_USER;
+import static utils.Message.MessageType.USERS;
 
 /**
  * A subclass of the AbstractThread. This handles each client connection to the chat server, by
@@ -50,8 +56,7 @@ public class ServerThread extends AbstractThread {
       if (validUsername) {
         this.registerClient(username);
       } else {
-        this.sendMessage(
-            new Message(MessageType.INVALID_USERNAME, "", "", errorMessage));
+        sendMessage(new Message(INVALID_USERNAME, "", "", errorMessage));
       }
     } catch (IOException e) {
       try {
@@ -60,11 +65,13 @@ public class ServerThread extends AbstractThread {
             + " disconnected";
         Logger.toConsole("DISCONNECTION", log);
       } catch (IOException ex) {
+        // TODO: Handle exception
         throw new RuntimeException(ex);
       }
     } catch (NullPointerException e) {
       Logger.toConsole("CLIENT ERROR", e.getMessage());
     } catch (ClassNotFoundException e) {
+      // TODO: Handle exception
       throw new RuntimeException(e);
     }
   }
@@ -78,15 +85,14 @@ public class ServerThread extends AbstractThread {
    * @param username THe username provided by the client
    */
   synchronized void registerClient(String username) {
-    this.setUser(new User(username, clientSocket.getInetAddress()));
+    setUser(new User(username, clientSocket.getInetAddress()));
     Server.addClient(this, username);
-    this.sendMessage(
-        new Message(MessageType.CONNECTION, null, username, "Connected to server"));
-    this.isConnected = true;
+    sendMessage(new Message(CONNECTION, null, username, "Connected to server"));
+    setConnected(true);
 
     // Notify all connected client of a new client connection
     String messageBody = String.format("User '%s' connected", username);
-    Server.broadcastMessage(new Message(MessageType.USERS, username, null, messageBody));
+    Server.broadcastMessage(new Message(USERS, username, null, messageBody));
     String log = String.format("%s:%d -> ", clientSocket.getInetAddress(), clientSocket.getPort())
         + messageBody;
     Logger.toConsole("REGISTRATION", log);
@@ -98,29 +104,32 @@ public class ServerThread extends AbstractThread {
   @Override
   public void run() {
     validateUsername();
-    while (this.isConnected) {
+    while (isConnected()) {
       try {
         Message message = getMessage();
         //TODO: Handle different message types
         switch (message.getType()) {
           case CHAT:
-            if (message.getBody().length() != 0) {
+            /* Send the client's message to all connected clients */
+            if (message.getBody().length() != 0 && message.getSender().equals(user.getUsername())) {
               Server.broadcastMessage(message);
             }
             break;
           case DISCONNECTION:
             throw new IOException();
           case USERS:
+            /* Send the list of connected clients as a string representation */
             String listAsString = String.join(Message.DELIMITER, Server.getClientUsernames());
-            sendMessage(new Message(MessageType.USERS, null, null, listAsString));
+            sendMessage(new Message(USERS, null, null, listAsString));
             break;
           case WHISPER:
+            /* Send a private message to the provided client [getReceiver()] */
             if (message.getReceiver() == null) {
               String error = "No username was provided";
-              sendMessage(new Message(MessageType.NONEXISTENT_USER, null, null, error));
+              sendMessage(new Message(INVALID_MESSAGE, null, null, error));
             } else if (!Server.hasClient(message.getReceiver())) {
               String error = "User " + message.getReceiver() + " does not exist";
-              sendMessage(new Message(MessageType.NONEXISTENT_USER, null, null, error));
+              sendMessage(new Message(NONEXISTENT_USER, null, null, error));
             } else {
               sendMessage(message); //Send the message back to the sender
               Server.sendWhisperMessage(message);
@@ -132,16 +141,23 @@ public class ServerThread extends AbstractThread {
                     + "type: " + message.getType());
         }
       } catch (IOException e) {
+        /* If the client is unreachable close their socket connection and remove them from the
+        connected clients map */
         disconnect();
-        String message = String.format("%s has disconnected", user.getUsername());
+
+        /* Notify the other clients that a client has disconnected */
+        String message = user.getUsername() + " has disconnected";
         Server.broadcastMessage(
-            new Message(MessageType.DISCONNECTION, null, null, user.getUsername()));
+            new Message(DISCONNECTION, null, null, user.getUsername()));
         Logger.toConsole("DISCONNECTION", message);
       } catch (NullPointerException e) {
+        /* Handle null objects sent by a client */
         Logger.toConsole("Client Error", e.getMessage());
       } catch (IllegalStateException e) {
+        /* Handle exception when a client sends a message with an invalid message type */
         Logger.toConsole("CLIENT ERROR", e.getMessage());
       } catch (ClassNotFoundException e) {
+        // TODO: Handle exception
         throw new RuntimeException(e);
       }
     }
@@ -155,8 +171,8 @@ public class ServerThread extends AbstractThread {
     try {
       super.disconnect();
     } catch (IOException e) {
-      Logger.toConsole("SERVER ERROR",
-          "Closing socket of user: '" + user.getUsername() + "'");
+      String logMessage = "Closing socket of user: '" + user.getUsername() + "'";
+      Logger.toConsole("SERVER ERROR", logMessage);
     } finally {
       Server.removeClient(user.getUsername());
     }
