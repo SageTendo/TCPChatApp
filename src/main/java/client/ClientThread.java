@@ -21,6 +21,7 @@ public class ClientThread extends AbstractThread {
 
   public ClientThread(String hostname, int port) throws IOException {
     super(hostname, port);
+
   }
 
   boolean registerUser(String username) {
@@ -107,6 +108,11 @@ public class ClientThread extends AbstractThread {
   }
 
   public List<String> getConnectedUsers() {
-    return connectedUsers;
+    String connectedUser = null;
+    sendMessage(new Message(MessageType.USERS, null, null, connectedUser));
+    // make listbox public
+    return null;// connectedUsers;
+
   }
+
 }
