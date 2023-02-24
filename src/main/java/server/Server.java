@@ -1,5 +1,7 @@
 package server;
 
+import static utils.Message.MessageType.USERS;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -46,8 +48,7 @@ public class Server {
         try {
           Socket clientSocket = this.serverSocket.accept();
           String log = String.format("New socket connection -> %s:%d",
-              clientSocket.getInetAddress(), clientSocket.getPort()
-          );
+              clientSocket.getInetAddress(), clientSocket.getPort());
           Logger.toConsole("CONNECTION", log);
           new ServerThread(clientSocket).start();
         } catch (IOException e) {
@@ -58,6 +59,13 @@ public class Server {
     }).start();
   }
 
+  /**
+   * Send the list of connected user to all connected clients
+   */
+  static void broadcastUsersList() {
+    String listAsString = String.join(Message.DELIMITER, getClientUsernames());
+    Server.broadcastMessage(new Message(USERS, null, null, listAsString));
+  }
 
   /**
    * Sends a message to all connected clients, in a separate thread
@@ -172,7 +180,8 @@ public class Server {
       /* Create a server instance */
       new Server(IPAddress, port);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      Logger.toConsole("SERVER ERROR", "Failed to start the server");
+      System.exit(1);
     }
   }
 }

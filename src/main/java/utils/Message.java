@@ -15,6 +15,7 @@ public class Message implements Serializable {
     INVALID_MESSAGE,
     INVALID_USERNAME,
     NONEXISTENT_USER,
+    NEW_USER,
     USERS,
     WHISPER
 

@@ -10,6 +10,7 @@ import static utils.Message.MessageType.CONNECTION;
 import static utils.Message.MessageType.DISCONNECTION;
 import static utils.Message.MessageType.INVALID_MESSAGE;
 import static utils.Message.MessageType.INVALID_USERNAME;
+import static utils.Message.MessageType.NEW_USER;
 import static utils.Message.MessageType.NONEXISTENT_USER;
 import static utils.Message.MessageType.USERS;
 
@@ -64,15 +65,18 @@ public class ServerThread extends AbstractThread {
         String log = "Socket -> " + clientSocket.getInetAddress() + ":" + clientSocket.getPort()
             + " disconnected";
         Logger.toConsole("DISCONNECTION", log);
-      } catch (IOException ex) {
+      } catch (IOException ignored) {
         // TODO: Handle exception
-        throw new RuntimeException(ex);
+        String logMessage = "Closing socket of user: '" + user.getUsername() + "'";
+        Logger.toConsole("SERVER ERROR", logMessage);
+        // throw new RuntimeException(ex);
       }
     } catch (NullPointerException e) {
       Logger.toConsole("CLIENT ERROR", e.getMessage());
     } catch (ClassNotFoundException e) {
       // TODO: Handle exception
-      throw new RuntimeException(e);
+      Logger.toConsole("SERVER", "Failed to deserialize data to a message object");
+      //throw new RuntimeException(e);
     }
   }
 
@@ -91,11 +95,12 @@ public class ServerThread extends AbstractThread {
     setConnected(true);
 
     // Notify all connected client of a new client connection
-    String messageBody = String.format("User '%s' connected", username);
-    Server.broadcastMessage(new Message(USERS, username, null, messageBody));
-    String log = String.format("%s:%d -> ", clientSocket.getInetAddress(), clientSocket.getPort())
-        + messageBody;
-    Logger.toConsole("REGISTRATION", log);
+    String messageBody = String.format("'%s' connected", username);
+    Server.broadcastMessage(new Message(NEW_USER, null, null, messageBody));
+
+    Server.broadcastUsersList(); // Send the list of connected users to all clients
+    String log = String.format("%s:%d -> ", clientSocket.getInetAddress(), clientSocket.getPort());
+    Logger.toConsole("REGISTRATION", log + messageBody);
   }
 
   /**
@@ -115,9 +120,9 @@ public class ServerThread extends AbstractThread {
               Server.broadcastMessage(message);
             }
             break;
-          case DISCONNECTION:
-            throw new IOException();
           case USERS:
+            //FIXME: could be removed if unused
+
             /* Send the list of connected clients as a string representation */
             String listAsString = String.join(Message.DELIMITER, Server.getClientUsernames());
             sendMessage(new Message(USERS, null, null, listAsString));
@@ -130,6 +135,9 @@ public class ServerThread extends AbstractThread {
             } else if (!Server.hasClient(message.getReceiver())) {
               String error = "User " + message.getReceiver() + " does not exist";
               sendMessage(new Message(NONEXISTENT_USER, null, null, error));
+            } else if (message.getReceiver().equals(user.getUsername())) {
+              String error = "You cannot whisper to yourself";
+              sendMessage(new Message(INVALID_MESSAGE, null, null, error));
             } else {
               sendMessage(message); //Send the message back to the sender
               Server.sendWhisperMessage(message);
@@ -137,8 +145,8 @@ public class ServerThread extends AbstractThread {
             break;
           default:
             throw new IllegalStateException(
-                "User " + user.getUsername() + " sent an invalid message "
-                    + "type: " + message.getType());
+                "User " + user.getUsername() + " sent an invalid message " + "type: "
+                    + message.getType());
         }
       } catch (IOException e) {
         /* If the client is unreachable close their socket connection and remove them from the
@@ -147,8 +155,10 @@ public class ServerThread extends AbstractThread {
 
         /* Notify the other clients that a client has disconnected */
         String message = user.getUsername() + " has disconnected";
-        Server.broadcastMessage(
-            new Message(DISCONNECTION, null, null, user.getUsername()));
+        Server.broadcastMessage(new Message(DISCONNECTION, null, null, message));
+
+        /* update client user list */
+        Server.broadcastUsersList();
         Logger.toConsole("DISCONNECTION", message);
       } catch (NullPointerException e) {
         /* Handle null objects sent by a client */
@@ -158,7 +168,8 @@ public class ServerThread extends AbstractThread {
         Logger.toConsole("CLIENT ERROR", e.getMessage());
       } catch (ClassNotFoundException e) {
         // TODO: Handle exception
-        throw new RuntimeException(e);
+        Logger.toConsole("SERVER", "Failed to deserialize data to a message object");
+        //throw new RuntimeException(e);
       }
     }
   }
