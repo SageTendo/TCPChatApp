@@ -76,29 +76,29 @@ public class ChatGUI {
     exitButton.setContentAreaFilled(false);
     exitButton.setIcon(exit);
     exitButton.setFocusable(false);
-    exitButton.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        /*
-         *
-         *
-         *
-         *
-         *
-         * CODE TO BE INSERTED:
-         * USER PRESSES DISCONNECT
-         * PROGRAM ENDS
-         *
-         *
-         *
-         *
-         *
-         *
-         *
-         */
-        if (e.getSource() == exitButton) {
-          frame.dispose();
-        }
-        System.out.println("Client has Disconnected");
+    exitButton.addActionListener(e -> {
+      /*
+       *
+       *
+       *
+       *
+       *
+       * CODE TO BE INSERTED:
+       * USER PRESSES DISCONNECT
+       * PROGRAM ENDS
+       *
+       *
+       *
+       *
+       *
+       *
+       *
+       */
+      if (e.getSource() == exitButton) {
+        clientThread.disconnect();
+        frame.dispose();
+        frame.setVisible(false);
+        System.exit(0);
       }
     });
     frame.add(exitButton);
@@ -229,6 +229,8 @@ public class ChatGUI {
                 new Message(MessageType.CHAT, clientThread.user.getUsername(), null,
                     textFieldContent));
           }
+          /* Clear the message field when the message is sent  */
+          messageField.setText("");
         }
       }
     });
