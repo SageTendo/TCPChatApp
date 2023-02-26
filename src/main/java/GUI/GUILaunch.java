@@ -12,11 +12,9 @@ import javax.swing.JTextField;
 
 /**
  * The GUILaunch program implements an application that displays a GUI for the Chat-App program.
- * Which requires users to insert a username and port number.
+ * Which requires users to insert a username, the server's hostname and port number.
  *
  * @author Group4
- * @version 1.0
- * @since 2023-02-17
  */
 
 public class GUILaunch {
@@ -28,6 +26,9 @@ public class GUILaunch {
   private static final JFrame launchFrame = new JFrame();
 
 
+  /**
+   * Constructor - Calls for the creation frame components and launching the frame
+   */
   public GUILaunch() {
     GUIComponents();
     GUILaunchInit();
@@ -37,7 +38,6 @@ public class GUILaunch {
    * This method is used to structure the JFrame in a way which it can fit all the necessary
    * components.
    */
-
   static void GUILaunchInit() {
     launchFrame.setTitle("ChatRoom");
     launchFrame.setSize(350, 300);
@@ -48,10 +48,9 @@ public class GUILaunch {
   }
 
   /**
-   * This method gives each component, a position, size and a design. Then its finally added to the
-   * Jframe.
+   * This method gives each component, a position, size and a design. Then it's finally added to the
+   * JFrame.
    */
-
   static void GUIComponents() {
     JLabel enterUsernameLabel = new JLabel("Username:");
     enterUsernameLabel.setBounds(10, 20, 100, 10);
@@ -86,6 +85,10 @@ public class GUILaunch {
         if (enterUsername.getText().equals("") || enterUsername.getText().length() > 15) {
           JOptionPane.showMessageDialog(connectButton, "Please enter a valid username",
               "Attention!", JOptionPane.WARNING_MESSAGE);
+        } else if (IPAddressEntry.getText().equals("")) {
+          JOptionPane.showMessageDialog(connectButton,
+              "Please enter the hostname of the server", "Attention!",
+              JOptionPane.WARNING_MESSAGE);
         } else if (portEntry.getText().equals("") || !isNumber(portEntry.getText())) {
           JOptionPane.showMessageDialog(connectButton, "Please enter a valid port number",
               "Attention!", JOptionPane.WARNING_MESSAGE);
@@ -96,12 +99,15 @@ public class GUILaunch {
 
           try {
             ClientThread clientThread = new ClientThread(IPAddress, port);
-            if (clientThread.register(username)) {
-              launchFrame.dispose();
-              /* Start the GUI before message listening */
-              new ChatGUI(clientThread);
-              clientThread.start();
-            }
+            /* Run the registration process in a separate thread to prevent the GUI from halting */
+            new Thread(() -> {
+              if (clientThread.register(username)) {
+                launchFrame.dispose();
+                /* Start the GUI before message listening */
+                new ChatGUI(clientThread);
+                clientThread.start();
+              }
+            }).start();
           } catch (IOException ex) {
             JOptionPane.showMessageDialog(launchFrame, "Failed to connect to server",
                 "Connection Error", JOptionPane.ERROR_MESSAGE);
@@ -110,6 +116,7 @@ public class GUILaunch {
       }
     });
 
+    /* Add components to the launch frame */
     launchFrame.add(enterUsernameLabel);
     launchFrame.add(enterUsername);
     launchFrame.add(IPAddressLabel);
@@ -132,14 +139,5 @@ public class GUILaunch {
     } catch (NumberFormatException ignored) {
     }
     return false;
-  }
-
-  /**
-   * This is the main method which creates a new GUI object
-   *
-   * @param args Unused.
-   */
-  public static void main(String[] args) {
-    new GUILaunch();
   }
 }

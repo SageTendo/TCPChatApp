@@ -15,13 +15,23 @@ import static utils.Message.MessageType.NONEXISTENT_USER;
 import static utils.Message.MessageType.USERS;
 
 /**
- * A subclass of the AbstractThread. This handles each client connection to the chat server, by
- * creating a separate thread for each client.
+ * Represent a server thread that communicates with a client via sockets.
+ * <p>
+ * This class handles all communication made by connected clients to the server, such as messages
+ * sent by a client or when a client disconnects. Each client is handled in a separate thread, which
+ * is killed once the client disconnects.
+ * <p>
+ * This class is a subclass of the {@link utils.AbstractThread} class.
+ *
+ * @author Group4
  */
 public class ServerThread extends AbstractThread {
 
   /**
-   * @see utils.AbstractThread#AbstractThread(Socket)
+   * Constructor that takes a client's socket as an argument.
+   *
+   * @param socket The client's socket connection
+   * @see AbstractThread#AbstractThread(Socket)
    */
   public ServerThread(Socket socket) throws IOException {
     super(socket);
@@ -104,7 +114,10 @@ public class ServerThread extends AbstractThread {
   }
 
   /**
-   * Handle new messages sent by the client
+   * Handles the listening of new messages sent by the client. The method calls
+   * {@link ServerThread#validateUsername} which will wait for the client to respond with a valid
+   * username. If the username supplied is valid the client is registered and the while loop will
+   * run for as long as the client is connected, otherwise the client connection is closed.
    */
   @Override
   public void run() {
@@ -133,7 +146,7 @@ public class ServerThread extends AbstractThread {
               String error = "No username was provided";
               sendMessage(new Message(INVALID_MESSAGE, null, null, error));
             } else if (!Server.hasClient(message.getReceiver())) {
-              String error = "User " + message.getReceiver() + " does not exist";
+              String error = "Cannot whisper to a non-existent user";
               sendMessage(new Message(NONEXISTENT_USER, null, null, error));
             } else if (message.getReceiver().equals(user.getUsername())) {
               String error = "You cannot whisper to yourself";
@@ -162,7 +175,7 @@ public class ServerThread extends AbstractThread {
         Logger.toConsole("DISCONNECTION", message);
       } catch (NullPointerException e) {
         /* Handle null objects sent by a client */
-        Logger.toConsole("Client Error", e.getMessage());
+        Logger.toConsole("CLIENT ERROR", e.getMessage());
       } catch (IllegalStateException e) {
         /* Handle exception when a client sends a message with an invalid message type */
         Logger.toConsole("CLIENT ERROR", e.getMessage());

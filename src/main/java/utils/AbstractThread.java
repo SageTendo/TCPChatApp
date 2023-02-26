@@ -6,9 +6,10 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 /**
- * A subclass of the {@link Thread} class.
- * Provides common functionalities that can be used by
+ * A subclass of the {@link Thread} class. Provides common functionalities that can be used by
  * multiple threads.
+ *
+ * @author Group4
  */
 public abstract class AbstractThread extends Thread {
 
@@ -16,9 +17,12 @@ public abstract class AbstractThread extends Thread {
   public User user;
   public ObjectOutputStream out;
   public ObjectInputStream in;
+  /* Indicates the status of a socket connection */
   private boolean isConnected = false;
 
   /**
+   * Constructor that takes a client's socket as an argument.
+   *
    * @param clientSocket The socket connection between the server and client
    * @throws IOException If an I/O error occurs while writing stream header.
    */
@@ -28,6 +32,9 @@ public abstract class AbstractThread extends Thread {
   }
 
   /**
+   * Constructor that takes the server's hostname and port number that the server is running on, as
+   * arguments.
+   *
    * @param hostname The server's hostname
    * @param port     The port the server runs on
    * @throws IOException If an I/O error occurs while writing stream header.
@@ -51,7 +58,7 @@ public abstract class AbstractThread extends Thread {
 
   /**
    * Handle disconnecting the client and removing their thread instance from the list of connected
-   * clients and their username from the list of client usernames
+   * clients and their username from the list of client usernames.
    *
    * @throws IOException: If an I/O error occurs when closing the socket.
    */
@@ -61,22 +68,23 @@ public abstract class AbstractThread extends Thread {
   }
 
   /**
-   * Send serialized messages to the client
+   * Sends serialized message objects between the client and server.
    *
-   * @param message Message: The message object to be serialized and sent to the client
+   * @param message Message: The message object to be serialized and sent by the client/server
    */
   public void sendMessage(Message message) {
     try {
       this.out.writeObject(message);
       this.out.flush();
     } catch (IOException e) {
-      //TODO: Handle exception
-      throw new RuntimeException(e);
+      //FIXME: Handle exception
+      //throw new RuntimeException(e);
     }
   }
 
   /**
-   * Set the user object
+   * Sets the user object containing the connected client's information, such as their username and
+   * IP Address.
    *
    * @param user The user object to set
    */
@@ -91,7 +99,7 @@ public abstract class AbstractThread extends Thread {
    * @throws IOException            Input/Output related exceptions
    * @throws ClassNotFoundException WHen the class of a serialized object cannot be found.
    */
-  public Message getMessage() throws IOException, ClassNotFoundException {
+  public synchronized Message getMessage() throws IOException, ClassNotFoundException {
     Message message = (Message) in.readObject();
     if (message == null) {
       throw new NullPointerException(
@@ -101,10 +109,18 @@ public abstract class AbstractThread extends Thread {
     return message;
   }
 
+  /**
+   * @return True if the socket connection is still alive, otherwise false.
+   */
   public boolean isConnected() {
     return isConnected;
   }
 
+  /**
+   * Setter method to set the 'isConnected' flag.
+   *
+   * @param connected The boolean flag to set the 'isConnected' flag to.
+   */
   public void setConnected(boolean connected) {
     isConnected = connected;
   }

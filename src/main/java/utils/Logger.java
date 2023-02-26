@@ -1,5 +1,10 @@
 package utils;
 
+/**
+ * A simple logger used to log formatted messages to the console.
+ *
+ * @author Group4
+ */
 public class Logger {
 
   /**

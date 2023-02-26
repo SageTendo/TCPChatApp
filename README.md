@@ -6,18 +6,25 @@
 > client-server applications.
 >
 
-### Compiling and running the server
+### Compiling the project
 ```shell
 cd src/main/java
-javac -sourcepath . server/Server.java 
-java server.Server
+chmod +x build.sh
+./build.sh
 ```
 
-### Compiling and running the test client
+### Running the server
 ```shell
-cd src/main/java
-javac -sourcepath . randomtest/TestClient.java 
-java randomtest.TestClient <username>
+# In src/main/java
+# If not: cd src/main/java
+java TCPChatApp server <IP Address> <Port>
+```
+
+### Running the client
+```shell
+# In src/main/java
+# If not: cd src/main/java
+java TCPChatApp client
 ```
  
 **USEFUL RESOURCES:**

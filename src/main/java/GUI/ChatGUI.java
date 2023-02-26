@@ -3,8 +3,6 @@ package GUI;
 import client.ClientThread;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
@@ -28,7 +26,6 @@ import utils.Message.MessageType;
  * @version 1.0
  * @since 2023-02-17
  */
-
 public class ChatGUI {
 
   private static ClientThread clientThread;
@@ -42,6 +39,11 @@ public class ChatGUI {
   private static final JPanel container = new JPanel();
   private static String username;
 
+  /**
+   * //TODO: JAVADOC
+   *
+   * @param clientThread
+   */
   public ChatGUI(ClientThread clientThread) {
     ChatGUI.clientThread = clientThread;
     username = clientThread.user.getUsername();
@@ -170,18 +172,18 @@ public class ChatGUI {
     userListBox.setBounds(390, 150, 110, 20);
     userListBox.addActionListener(e -> {
       /*
-       
-       
-       
+
+
+
         If we want an action to happen once we press on a user
         we can do it
        
        
         Here if you click on the person in the list, it automatically
         puts "@{name}" in the messagefield
-       
-       
-       
+
+
+
        */
       if (e.getSource() == userListBox) {
         if (userListBox.getItemAt(userListBox.getSelectedIndex()) != null) {
@@ -210,8 +212,8 @@ public class ChatGUI {
     sendButton.addActionListener(e -> {
       if (e.getSource() == sendButton) {
         if (messageField.getText().equals("")) {
-          JOptionPane.showMessageDialog(sendButton,
-              "Messages can not be null.", "Attention!", JOptionPane.WARNING_MESSAGE);
+          JOptionPane.showMessageDialog(sendButton, "Messages can not be null.", "Attention!",
+              JOptionPane.WARNING_MESSAGE);
         } else {
           String textFieldContent = messageField.getText();
           String receiver;
@@ -220,14 +222,12 @@ public class ChatGUI {
             /* Send whisper message */
             receiver = textFieldContent.substring(1, textFieldContent.indexOf(" "));
             messageContent = textFieldContent.substring(textFieldContent.indexOf(" "));
-            sendMessage(
-                new Message(MessageType.WHISPER, clientThread.user.getUsername(), receiver,
-                    messageContent));
+            sendMessage(new Message(MessageType.WHISPER, clientThread.user.getUsername(), receiver,
+                messageContent));
           } else {
             /* Send a normal message */
-            sendMessage(
-                new Message(MessageType.CHAT, clientThread.user.getUsername(), null,
-                    textFieldContent));
+            sendMessage(new Message(MessageType.CHAT, clientThread.user.getUsername(), null,
+                textFieldContent));
           }
           /* Clear the message field when the message is sent  */
           messageField.setText("");
@@ -283,5 +283,9 @@ public class ChatGUI {
       case DISCONNECTION:
         messageArea.append(content + '\n');
     }
+  }
+
+  public static void showErrorMessage(String message) {
+    JOptionPane.showMessageDialog(frame, message, "alert", JOptionPane.ERROR_MESSAGE);
   }
 }

@@ -4,7 +4,14 @@ import server.Server;
 import utils.Logger;
 
 /**
- * Driver class
+ * Driver class for a TCP chat program. The program can be run in 2 modes, client or server. This is
+ * determined using CLI arguments.
+ * <p>
+ * CLIENT MODE: java TCPChatApp client
+ * <p>
+ * SERVER MODE: java TCPChatApp server [IP ADDRESS] [PORT NUMBER]
+ *
+ * @author Group4
  */
 public class TCPChatApp {
 

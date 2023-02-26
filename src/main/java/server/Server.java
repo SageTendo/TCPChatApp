@@ -14,13 +14,22 @@ import utils.Message;
 /**
  * Server class that listens for client socket connections and handles communication between
  * clients.
+ *
+ * @author Group4
  */
 public class Server {
 
+  /* The minimum length required for a client username */
   static final int REQUIRED_USERNAME_LENGTH = 2;
+  /* Provides communication establishment with clients */
   private final ServerSocket serverSocket;
+  /*
+  Stores all connected clients and their respective usernames as key-value pairs with the
+  username being the key and the client handler (server thread) as the value.
+  */
   static final ConcurrentHashMap<String, ServerThread> connectedClients = new ConcurrentHashMap<>();
-  private boolean serverStarted;
+  /* Indicates whether the server manages to open a socket */
+  private final boolean serverStarted;
 
   /**
    * Constructor
@@ -52,15 +61,18 @@ public class Server {
           Logger.toConsole("CONNECTION", log);
           new ServerThread(clientSocket).start();
         } catch (IOException e) {
-          //TODO: Handle exception
-          throw new RuntimeException(e);
+          //FIXME: Handle exception
+          Logger.toConsole("CONNECTION ERROR",
+              "Couldn't accept client socket connection");
+          //throw new RuntimeException(e);
         }
       }
     }).start();
   }
 
   /**
-   * Send the list of connected user to all connected clients
+   * Sends the list of connected user to all connected clients. The list is joined using the
+   * {@link utils.Message#DELIMITER} (delimiter) .
    */
   static void broadcastUsersList() {
     String listAsString = String.join(Message.DELIMITER, getClientUsernames());
@@ -68,7 +80,10 @@ public class Server {
   }
 
   /**
-   * Sends a message to all connected clients, in a separate thread
+   * Sends a message to all connected clients. The server iterates through of connected clients,
+   * checks if each client is still connected to the server and sends the message to them if they're
+   * still connected. This process is synchronized to prevent multiple threads from trying to send
+   * messages at the same time, leading to inconsistent results.
    *
    * @param message The message to be broadcast to all connected clients
    */
@@ -83,9 +98,10 @@ public class Server {
   }
 
   /**
-   * Send messages to a specific client (a private message)
+   * Sends a message to a specific client (a private message). The provided receiver in the message
+   * object is used to get the thread of the client to send the message to.
    *
-   * @param message The message to send to the client
+   * @param message The message object to send to the client
    */
   static synchronized void sendWhisperMessage(Message message) {
     ServerThread receiver = connectedClients.get(message.getReceiver());
@@ -119,7 +135,10 @@ public class Server {
   }
 
   /**
-   * @param username The client's username
+   * Checks if a client with the given username is connected to the server (exists in the map of
+   * connected clients).
+   *
+   * @param username The username of the client to lookup
    * @return True if the client is connected to the server, otherwise False
    */
   static boolean hasClient(String username) {
@@ -127,9 +146,10 @@ public class Server {
   }
 
   /**
-   * Get a list of connected clients' usernames.
+   * Returns a list of usernames of clients currently connected. This is done by connected the map's
+   * keySet to an Arraylist.
    *
-   * @return The list of usernames
+   * @return The list of usernames of connected clients
    */
   public static List<String> getClientUsernames() {
     List<String> usernames;
@@ -137,51 +157,5 @@ public class Server {
       usernames = new ArrayList<>(connectedClients.keySet());
     }
     return usernames;
-  }
-
-  /**
-   * Closes the server socket and all connected client sockets.
-   */
-  private void close() {
-    try {
-      serverStarted = false;
-      synchronized (connectedClients) {
-        for (ServerThread client : connectedClients.values()) {
-          client.disconnect();
-        }
-      }
-      serverSocket.close();
-    } catch (IOException e) {
-      // TODO: handle exception
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static void main(String[] args) {
-    String IPAddress;
-    int port;
-
-    try {
-      if (args.length != 2) {
-        System.err.println("usage: java server.Server <IP ADDRESS> <PORT NUMBER>");
-        System.exit(1);
-      }
-
-      /* Read in CLI arguments */
-      IPAddress = args[0];
-      try {
-        port = Integer.parseInt(args[1]);
-      } catch (NumberFormatException ignored) {
-        System.err.println("Invalid port number provided...");
-        System.err.println("Defaulting to port 5000");
-        port = 5000;
-      }
-
-      /* Create a server instance */
-      new Server(IPAddress, port);
-    } catch (IOException e) {
-      Logger.toConsole("SERVER ERROR", "Failed to start the server");
-      System.exit(1);
-    }
   }
 }

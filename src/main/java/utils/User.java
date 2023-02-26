@@ -3,14 +3,23 @@ package utils;
 import java.io.Serializable;
 import java.net.InetAddress;
 
+/**
+ * Represent a user in a client-server application.
+ * <p>
+ * This class implements the Serializable interface, which allows user objects to be converted in
+ * byte streams which can be transmitted over a network.
+ *
+ * @author Group4
+ */
 public class User implements Serializable {
 
   private final String username;
   private final InetAddress ip;
+  /*  An identifier that is used to serialize/deserialize an object of a Serializable class */
   private static final long serialVersionUID = 420L;
 
   /**
-   * Instantiate a user object with the following parameters
+   * Constructor which instantiates a user object with the following parameters
    *
    * @param username The username provided by the client
    * @param ip       The IP address of the connected client
@@ -35,7 +44,9 @@ public class User implements Serializable {
   }
 
   /**
-   * @see Object#equals(Object)
+   * Indicates whether some other user object is "equal to" this one.
+   *
+   * @see java.lang.Object#equals(Object)
    */
   @Override
   public boolean equals(Object o) {
