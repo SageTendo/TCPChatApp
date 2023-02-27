@@ -16,16 +16,16 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
+import javax.swing.text.DefaultCaret;
 import utils.Message;
 import utils.Message.MessageType;
-import javax.swing.text.DefaultCaret;
- 
+
 /**
- * This is a GUI program written in Java that displays a simple GUI for a chat application. 
+ * This is a GUI program written in Java that displays a simple GUI for a chat application.
+ * <p>
+ * It includes an exit button, a message area where messages are displayed, a text field where
+ * messages can be typed, and a list of online users.
  *
- * It includes an exit button, a message area where messages are displayed, a text field where messages can be typed,
- * and a list of online users.
- * 
  * @author Group4
  */
 public class ChatGUI {
@@ -44,7 +44,7 @@ public class ChatGUI {
   /**
    * Constructor that takes a client thread as an argument.
    *
-   * @param clientThread
+   * @param clientThread The client thread responsible for handling communication with the server
    */
   public ChatGUI(ClientThread clientThread) {
     ChatGUI.clientThread = clientThread;
@@ -55,8 +55,8 @@ public class ChatGUI {
 
   /**
    * This method is used to structure the JFrame in a way which it can fit all the necessary
-   * components.
-   * It initializes the JFrame and sets its properties such as size, layout, and visibility.
+   * components. It initializes the JFrame and sets its properties such as size, layout, and
+   * visibility.
    */
   static void init() {
     frame.setTitle("ChatRoom");
@@ -68,9 +68,10 @@ public class ChatGUI {
   }
 
   /**
-   * This method initializes and sets the properties for each GUI component such as size, position, and design. 
-   * The exitButton component is designed with an ImageIcon and has an action listener that calls disconnect() 
-   * on the clientThread object, disposes of the frame, and exits the program.
+   * This method initializes and sets the properties for each GUI component such as size, position,
+   * and design. The exitButton component is designed with an ImageIcon and has an action listener
+   * that calls disconnect() on the clientThread object, disposes of the frame, and exits the
+   * program.
    */
   static void appComponents() {
     String path = System.getProperty("user.dir") + "/GUI";
@@ -102,10 +103,11 @@ public class ChatGUI {
         BorderFactory.createEmptyBorder(10, 10, 10, 10)));
     messageArea.setLineWrap(true);
 
-    // Adding a scroll incase the messages get to the end of the area
+    // Adding a scroll in case the messages get to the end of the area
     JScrollPane scroll = new JScrollPane(messageArea);
-    DefaultCaret caret = (DefaultCaret) messageArea.getCaret(); 
-    caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE); //will make sure the JScrollPane moves down automatically
+    DefaultCaret caret = (DefaultCaret) messageArea.getCaret();
+    caret.setUpdatePolicy(
+        DefaultCaret.ALWAYS_UPDATE); //will make sure the JScrollPane moves down automatically
 
     //Using a JPanel to sort of group the textArea and the scroller together
     container.setBounds(50, 45, 320, 320);
@@ -146,7 +148,9 @@ public class ChatGUI {
     userListBox.setBounds(390, 150, 110, 20);
     userListBox.addActionListener(e -> {
       if (e.getSource() == userListBox) {
-        if (userListBox.getItemAt(userListBox.getSelectedIndex()) != null) {
+        /* Avoid appending @<your username> or @null to the message text field */
+        if (userListBox.getItemAt(userListBox.getSelectedIndex()) != null &&
+            !userListBox.getItemAt(userListBox.getSelectedIndex()).equals(username)) {
           messageField.setText("@" + userListBox.getItemAt(userListBox.getSelectedIndex()) + " ");
         }
       }
@@ -167,8 +171,8 @@ public class ChatGUI {
     sendButton.addActionListener(e -> {
       if (e.getSource() == sendButton) {
         if (messageField.getText().equals("")) {
-          JOptionPane.showMessageDialog(sendButton, "Messages can not be null.", "Attention!",
-              JOptionPane.WARNING_MESSAGE);
+          JOptionPane.showMessageDialog(sendButton, "Messages can not be null.",
+              "Attention!", JOptionPane.WARNING_MESSAGE);
         } else {
           String textFieldContent = messageField.getText();
           String receiver;
@@ -177,12 +181,10 @@ public class ChatGUI {
             /* Send whisper message */
             receiver = textFieldContent.substring(1, textFieldContent.indexOf(" "));
             messageContent = textFieldContent.substring(textFieldContent.indexOf(" "));
-            sendMessage(new Message(MessageType.WHISPER, clientThread.user.getUsername(), receiver,
-                messageContent));
+            sendMessage(new Message(MessageType.WHISPER, username, receiver, messageContent));
           } else {
             /* Send a normal message */
-            sendMessage(new Message(MessageType.CHAT, clientThread.user.getUsername(), null,
-                textFieldContent));
+            sendMessage(new Message(MessageType.CHAT, username, "", textFieldContent));
           }
           /* Clear the message field when the message is sent  */
           messageField.setText("");
@@ -191,8 +193,8 @@ public class ChatGUI {
     });
     frame.add(sendButton);
 
-  //This text area will indicate how users can use "whispering"
-  
+    //This text area will indicate how users can use "whispering"
+
     JTextArea helpArea = new JTextArea();
     helpArea.setBounds(390, 190, 110, 140);
     helpArea.setFont(new Font("SansSerif", Font.PLAIN, 12));
@@ -209,12 +211,14 @@ public class ChatGUI {
 
   /**
    * This method sends the given message to the server via the clientThread object.
+   *
    * @param message the message to be sent to the server
    */
 
   private static void sendMessage(Message message) {
     clientThread.sendMessage(message);
   }
+
   /**
    * This method updates the user list in the JComboBox, when a user joins or leaves
    */
@@ -222,10 +226,11 @@ public class ChatGUI {
     userListModel.removeAllElements();
     userListModel.addAll(clientThread.getConnectedUsers());
   }
+
   /**
-   * This method appends the message to the text area.
-   * These messages include whispering and the handling of 
-   * users disconnecting.
+   * This method appends the message to the text area. These messages include whispering and the
+   * handling of users disconnecting.
+   *
    * @param message the message to be appended to the textarea
    */
   public static void updateChat(Message message) {
@@ -238,12 +243,14 @@ public class ChatGUI {
         break;
       case NEW_USER:
       case DISCONNECTION:
-        messageArea.append(content + '\n');
+        messageArea.append("** " + content + " **\n");
     }
   }
+
   /**
    * This method Displays an error message in a dialog box.
-   * @param message the appropriate error message 
+   *
+   * @param message the appropriate error message
    */
   public static void showErrorMessage(String message) {
     JOptionPane.showMessageDialog(frame, message, "alert", JOptionPane.ERROR_MESSAGE);

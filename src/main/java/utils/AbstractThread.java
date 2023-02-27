@@ -15,8 +15,8 @@ public abstract class AbstractThread extends Thread {
 
   public final Socket clientSocket;
   public User user;
-  public ObjectOutputStream out;
-  public ObjectInputStream in;
+  private ObjectOutputStream out;
+  private ObjectInputStream in;
   /* Indicates the status of a socket connection */
   private boolean isConnected = false;
 
@@ -76,9 +76,7 @@ public abstract class AbstractThread extends Thread {
     try {
       this.out.writeObject(message);
       this.out.flush();
-    } catch (IOException e) {
-      //FIXME: Handle exception
-      //throw new RuntimeException(e);
+    } catch (IOException ignored) {
     }
   }
 

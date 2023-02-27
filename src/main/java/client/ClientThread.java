@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.swing.JOptionPane;
 import utils.AbstractThread;
 import utils.Logger;
 import utils.Message;
@@ -23,7 +22,7 @@ import utils.User;
  */
 public class ClientThread extends AbstractThread {
 
-  public List<String> connectedUsers = new ArrayList<>();
+  private List<String> connectedUsers = new ArrayList<>();
 
   /**
    * Constructor the takes the server's hostname and port as arguments.
@@ -48,20 +47,18 @@ public class ClientThread extends AbstractThread {
    * @return True if registered to the server, otherwise false.
    */
   public boolean register(String username) {
-    sendMessage(new Message(MessageType.CONNECTION, null, null, username));
+    sendMessage(new Message(MessageType.CONNECTION, "", "", username));
     try {
       Message serverResponse = getMessage();
       if (!serverResponse.getType().equals(MessageType.CONNECTION)) {
-        JOptionPane.showMessageDialog(null,
-            serverResponse.getBody(), "Login Error", JOptionPane.ERROR_MESSAGE);
+        ChatGUI.showErrorMessage(serverResponse.getBody());
         return false;
       }
 
       setUser(new User(username, clientSocket.getInetAddress()));
       return true;
     } catch (IOException e) {
-      JOptionPane.showMessageDialog(null,
-          "Failed to reach server", "Connection Error", JOptionPane.ERROR_MESSAGE);
+      ChatGUI.showErrorMessage("Failed to reach server");
     } catch (ClassNotFoundException e) {
       throw new RuntimeException(e);
     }
@@ -100,14 +97,12 @@ public class ClientThread extends AbstractThread {
               break;
           }
         } else {
-          Logger.toConsole("ERROR", "NULL MESSAGE");
+          Logger.toConsole("SERVER", "NULL MESSAGE");
         }
       } catch (IOException e) {
         disconnect();
       } catch (ClassNotFoundException e) {
-        //FIXME: handle exception
-        Logger.toConsole("SERVER", "Failed to deserialize data to a message object");
-        //throw new RuntimeException(e);
+        Logger.toConsole("DATA CORRUPTION", "Failed to deserialize data to a message object");
       }
     }
   }
@@ -122,8 +117,8 @@ public class ClientThread extends AbstractThread {
     try {
       super.disconnect();
     } catch (IOException ignored) {
-      // TODO: Handle exception
-      //throw new RuntimeException(e);
+      Logger.toConsole("SOCKET",
+          "Attempt to close socket failed. It may have already been closed");
     }
   }
 

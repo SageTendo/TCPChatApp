@@ -4,15 +4,9 @@ import utils.*;
 
 import java.io.*;
 import java.net.Socket;
+import utils.Message.MessageType;
 
 import static server.Server.REQUIRED_USERNAME_LENGTH;
-import static utils.Message.MessageType.CONNECTION;
-import static utils.Message.MessageType.DISCONNECTION;
-import static utils.Message.MessageType.INVALID_MESSAGE;
-import static utils.Message.MessageType.INVALID_USERNAME;
-import static utils.Message.MessageType.NEW_USER;
-import static utils.Message.MessageType.NONEXISTENT_USER;
-import static utils.Message.MessageType.USERS;
 
 /**
  * Represent a server thread that communicates with a client via sockets.
@@ -67,7 +61,7 @@ public class ServerThread extends AbstractThread {
       if (validUsername) {
         this.registerClient(username);
       } else {
-        sendMessage(new Message(INVALID_USERNAME, "", "", errorMessage));
+        sendMessage(new Message(MessageType.INVALID_USERNAME, "", "", errorMessage));
       }
     } catch (IOException e) {
       try {
@@ -76,17 +70,13 @@ public class ServerThread extends AbstractThread {
             + " disconnected";
         Logger.toConsole("DISCONNECTION", log);
       } catch (IOException ignored) {
-        // TODO: Handle exception
         String logMessage = "Closing socket of user: '" + user.getUsername() + "'";
         Logger.toConsole("SERVER ERROR", logMessage);
-        // throw new RuntimeException(ex);
       }
     } catch (NullPointerException e) {
       Logger.toConsole("CLIENT ERROR", e.getMessage());
     } catch (ClassNotFoundException e) {
-      // TODO: Handle exception
-      Logger.toConsole("SERVER", "Failed to deserialize data to a message object");
-      //throw new RuntimeException(e);
+      Logger.toConsole("DATA CORRUPTION", "Failed to deserialize data to a message object");
     }
   }
 
@@ -101,12 +91,12 @@ public class ServerThread extends AbstractThread {
   synchronized void registerClient(String username) {
     setUser(new User(username, clientSocket.getInetAddress()));
     Server.addClient(this, username);
-    sendMessage(new Message(CONNECTION, null, username, "Connected to server"));
+    sendMessage(new Message(MessageType.CONNECTION, "", username, "Connected to server"));
     setConnected(true);
 
     // Notify all connected client of a new client connection
     String messageBody = String.format("'%s' connected", username);
-    Server.broadcastMessage(new Message(NEW_USER, null, null, messageBody));
+    Server.broadcastMessage(new Message(MessageType.NEW_USER, "", "", messageBody));
 
     Server.broadcastUsersList(); // Send the list of connected users to all clients
     String log = String.format("%s:%d -> ", clientSocket.getInetAddress(), clientSocket.getPort());
@@ -125,7 +115,6 @@ public class ServerThread extends AbstractThread {
     while (isConnected()) {
       try {
         Message message = getMessage();
-        //TODO: Handle different message types
         switch (message.getType()) {
           case CHAT:
             /* Send the client's message to all connected clients */
@@ -133,24 +122,17 @@ public class ServerThread extends AbstractThread {
               Server.broadcastMessage(message);
             }
             break;
-          case USERS:
-            //FIXME: could be removed if unused
-
-            /* Send the list of connected clients as a string representation */
-            String listAsString = String.join(Message.DELIMITER, Server.getClientUsernames());
-            sendMessage(new Message(USERS, null, null, listAsString));
-            break;
           case WHISPER:
             /* Send a private message to the provided client [getReceiver()] */
             if (message.getReceiver() == null) {
               String error = "No username was provided";
-              sendMessage(new Message(INVALID_MESSAGE, null, null, error));
+              sendMessage(new Message(MessageType.INVALID_MESSAGE, "", "", error));
             } else if (!Server.hasClient(message.getReceiver())) {
               String error = "Cannot whisper to a non-existent user";
-              sendMessage(new Message(NONEXISTENT_USER, null, null, error));
+              sendMessage(new Message(MessageType.NONEXISTENT_USER, "", "", error));
             } else if (message.getReceiver().equals(user.getUsername())) {
               String error = "You cannot whisper to yourself";
-              sendMessage(new Message(INVALID_MESSAGE, null, null, error));
+              sendMessage(new Message(MessageType.INVALID_MESSAGE, "", "", error));
             } else {
               sendMessage(message); //Send the message back to the sender
               Server.sendWhisperMessage(message);
@@ -168,7 +150,8 @@ public class ServerThread extends AbstractThread {
 
         /* Notify the other clients that a client has disconnected */
         String message = user.getUsername() + " has disconnected";
-        Server.broadcastMessage(new Message(DISCONNECTION, null, null, message));
+        Server.broadcastMessage(
+            new Message(MessageType.DISCONNECTION, "", "", message));
 
         /* update client user list */
         Server.broadcastUsersList();
@@ -180,9 +163,8 @@ public class ServerThread extends AbstractThread {
         /* Handle exception when a client sends a message with an invalid message type */
         Logger.toConsole("CLIENT ERROR", e.getMessage());
       } catch (ClassNotFoundException e) {
-        // TODO: Handle exception
-        Logger.toConsole("SERVER", "Failed to deserialize data to a message object");
-        //throw new RuntimeException(e);
+        Logger.toConsole("DATA CORRUPTION",
+            "Failed to deserialize data to a message object");
       }
     }
   }

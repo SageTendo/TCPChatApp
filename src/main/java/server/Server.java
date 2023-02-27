@@ -1,7 +1,5 @@
 package server;
 
-import static utils.Message.MessageType.USERS;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -10,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import utils.Logger;
 import utils.Message;
+import utils.Message.MessageType;
 
 /**
  * Server class that listens for client socket connections and handles communication between
@@ -27,7 +26,8 @@ public class Server {
   Stores all connected clients and their respective usernames as key-value pairs with the
   username being the key and the client handler (server thread) as the value.
   */
-  static final ConcurrentHashMap<String, ServerThread> connectedClients = new ConcurrentHashMap<>();
+  private static final ConcurrentHashMap<String, ServerThread> connectedClients =
+      new ConcurrentHashMap<>();
   /* Indicates whether the server manages to open a socket */
   private final boolean serverStarted;
 
@@ -61,10 +61,8 @@ public class Server {
           Logger.toConsole("CONNECTION", log);
           new ServerThread(clientSocket).start();
         } catch (IOException e) {
-          //FIXME: Handle exception
           Logger.toConsole("CONNECTION ERROR",
               "Couldn't accept client socket connection");
-          //throw new RuntimeException(e);
         }
       }
     }).start();
@@ -76,7 +74,7 @@ public class Server {
    */
   static void broadcastUsersList() {
     String listAsString = String.join(Message.DELIMITER, getClientUsernames());
-    Server.broadcastMessage(new Message(USERS, null, null, listAsString));
+    Server.broadcastMessage(new Message(MessageType.USERS, "", "", listAsString));
   }
 
   /**

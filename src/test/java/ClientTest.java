@@ -3,12 +3,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static utils.Message.MessageType.CONNECTION;
-import static utils.Message.MessageType.USERS;
 
 import client.ClientThread;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import utils.Message;
+import utils.Message.MessageType;
 
 
 public class ClientTest {
@@ -81,7 +81,7 @@ public class ClientTest {
   public void testUsers() {
     ClientThread t1 = setup();
     t1.sendMessage(new Message(CONNECTION, null, null, "testuser"));
-    t1.sendMessage(new Message(USERS, null, null, null));
+    t1.sendMessage(new Message(MessageType.USERS, null, null, null));
 
     try {
       Thread.sleep(100);

@@ -9,7 +9,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
- 
+
 /**
  * The GUILaunch program implements an application that displays a GUI for the Chat-App program.
  * Which requires users to insert a username, the server's hostname and port number.
@@ -36,8 +36,8 @@ public class GUILaunch {
 
   /**
    * This method is used to structure the JFrame in a way which it can fit all the necessary
-   * components.
-   * It initializes the JFrame and sets its properties such as size, layout, and visibility.
+   * components. It initializes the JFrame and sets its properties such as size, layout, and
+   * visibility.
    */
   static void GUILaunchInit() {
     launchFrame.setTitle("ChatRoom");
@@ -50,10 +50,10 @@ public class GUILaunch {
 
   /**
    * This method gives each component, a position, size and a design. Then it's finally added to the
-   * JFrame.
-   * Creates and initializes the GUI components for the chat client launch frame.
-   * Includes text fields for entering username, IP address, and port number, a connect button, and error message dialogs.
-   * Upon successful registration, opens a new ChatGUI window and starts a new client thread for message listening.
+   * JFrame. Creates and initializes the GUI components for the chat client launch frame. Includes
+   * text fields for entering username, IP address, and port number, a connect button, and error
+   * message dialogs. Upon successful registration, opens a new ChatGUI window and starts a new
+   * client thread for message listening.
    */
   static void GUIComponents() {
     JLabel enterUsernameLabel = new JLabel("Username:");
